@@ -138,7 +138,6 @@ export const TestCanvas = (props: any) => {
                 context.lineTo(Number(current[0]) * i.frame.width, Number(current[1]) * i.frame.height);
               }
             } else {
-              console.log('==hhh', j);
               if (idx === 0) {
                 context.moveTo(Number(current[0]) * i.frame.width, Number(current[1]) * i.frame.height);
               } else {
