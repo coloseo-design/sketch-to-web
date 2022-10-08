@@ -16,7 +16,7 @@ const gradientTypeMap: any = {
   1: 'radial-gradient',
 };
 
-const laignMap: any = {
+const alignMap: any = {
   0: 'left',
   1: 'right',
   2: 'center',
@@ -60,7 +60,10 @@ export const getCircle = ( // 画圆
   context: CanvasRenderingContext2D,
   item: any,
   color: string | CanvasGradient | null,
-  dashPattern: number[], lineWidth: number, fillType: number, linerColor: CanvasGradient | null,
+  dashPattern: number[],
+  lineWidth: number,
+  fillType: number,
+  linerColor: CanvasGradient | null,
   fillStyle: string,
 ) => {
   context.beginPath();
@@ -111,7 +114,7 @@ export const getRectCircle = ( // 画虚线圆角矩形
   return context;
 };
 
-export const getColor = (color: any = {}) => `rgba(${color.red * 255}, ${color.green * 255}, ${color.blue * 255}, ${color.alpha})`;
+export const getColor = (color: any = {}) => `rgba(${(color.red * 255).toFixed(0)}, ${(color.green * 255).toFixed(0)}, ${(color.blue * 255).toFixed(0)}, ${color.alpha})`;
 
 export const getStyleChildrenInfo = (
   item: any,
@@ -136,16 +139,18 @@ export const getStyleChildrenInfo = (
       style: overrideStyle,
       oid: overridobjectID,
       type: overridType,
-      text: overridType === 'stringValue' ? value : undefined,
+      text: overridType === 'stringValue' || overridType === 'symbolID' ? value : undefined,
       parentId: item.do_objectID,
     });
   });
   let itemStyle;
-  let itemValueOverrid: string | undefined;
+  let itemValueOverride: string | undefined;
+  let overrideSymbolID;
   parentList.forEach((j) => { // 覆盖的值value，style等
     if (j.oid === item.do_objectID) {
       if (j.style && j.type === 'layerStyle') itemStyle = j.style;
-      if (j.type === 'stringValue') itemValueOverrid = j.text;
+      if (j.type === 'stringValue') itemValueOverride = j.text;
+      if (j.type === 'symbolID') overrideSymbolID = j.text;
     }
   }); // 覆盖的值和style
 
@@ -156,22 +161,19 @@ export const getStyleChildrenInfo = (
     shadows = [],
     contextSettings = {},
     borderOptions = {},
-    // windingRule: styleRule,
+    windingRule: styleRule,
   } = itemStyle || style || {};
   let color;
   let font;
   let family;
   let textAlign;
   let lineHeight;
-  if (Object.keys(textStyle).length) {
+  if (Object.keys(textStyle).length) { // 文字样式
     const { MSAttributedStringColorAttribute = {}, MSAttributedStringFontAttribute = {}, paragraphStyle = {} } = textStyle.encodedAttributes || {};
-    const {
-      alpha, red, green, blue,
-    } = MSAttributedStringColorAttribute;
-    color = `rgba(${red * 255}, ${green * 255}, ${blue * 255}, ${alpha})`;
+    color = getColor(MSAttributedStringColorAttribute);
     font = MSAttributedStringFontAttribute?.attributes?.size;
     family = MSAttributedStringFontAttribute?.attributes?.name;
-    textAlign = laignMap[paragraphStyle.alignment || 0];
+    textAlign = alignMap[paragraphStyle.alignment || 0];
     lineHeight = paragraphStyle.maximumLineHeight ? `${paragraphStyle.maximumLineHeight}px` : undefined;
   }
 
@@ -210,9 +212,8 @@ export const getStyleChildrenInfo = (
   }
 
   // isFlippedHorizontal, isFlippedVertical
-  const horizontalDeg = isFlippedHorizontal ? 180 : 0;
-  const vercilaDeg = isFlippedVertical ? 180 : 0;
-  const rotate = (item.rotation || 0) + horizontalDeg;
+  const rotate = 360 - (item.rotation || 0);
+
   // NSNonZeroWindingRule：非零缠绕。射线从左到右每交叉路径一次+1，从右到左每交叉一次-1。如果最终交叉数为0，则该点在路径之外；如果交叉数不为0，则在路径之内。默认缠绕规则。
   // windingRule === 0 不需要填充
   const currentStyle: any = {
@@ -228,7 +229,7 @@ export const getStyleChildrenInfo = (
     textAlign,
     background: (windingRule !== 0 && className !== 'shapeGroup' && className !== 'text') ? (fillType === 1 ? `${linearGradient}` : background) : undefined,
     boxShadow,
-    transform: rotate ? `rotate(${rotate}deg)` : undefined,
+    transform: isFlippedHorizontal ? 'rotateY(180deg)' : isFlippedVertical ? 'rotateX(180deg)' : rotate ? `rotate(${rotate}deg)` : undefined,
     display: isVisible ? undefined : 'none',
     opacity: contextSettings.opacity,
     lineHeight,
@@ -241,7 +242,7 @@ export const getStyleChildrenInfo = (
     });
   }
 
-  const shapeTyle = {
+  const shapeStyle = {
     position: currentStyle.position,
     top: currentStyle.top,
     left: currentStyle.left,
@@ -253,7 +254,7 @@ export const getStyleChildrenInfo = (
 
   return {
     currentStyle,
-    itemValueOverrid,
+    itemValueOverride,
     background,
     borderColor,
     borderType,
@@ -263,10 +264,10 @@ export const getStyleChildrenInfo = (
     gradient,
     fillType,
     overridList,
-    horizontalDeg,
     borderFillType,
     borderGradient,
-    shapeTyle,
+    shapeStyle,
     parentStyle,
+    overrideSymbolID,
   };
 };

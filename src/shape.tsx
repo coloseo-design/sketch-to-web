@@ -25,6 +25,9 @@ const Shape = (props: any) => {
     const div = document.getElementById(`${id}`);
     let linerColor = null;
     let borderGradientCorlor = null;
+    if (item.do_objectID === '246CB8D9-9384-4EAE-8755-EDBA22F4F6E1') {
+      console.log('==circle', item, dashPattern);
+    }
     if (div) {
       const Canvas = document.createElement('canvas');
       if (Canvas) {
@@ -91,71 +94,30 @@ export const TestCanvas = (props: any) => {
   const id = uuid();
   const { item } = props;
   const { layers } = item;
-  useEffect(() => {
-    const div = document.getElementById(`${id}-canvas`);
-    if (div) {
-      const ratio = window.devicePixelRatio || 1;
-      const Canvas = document.createElement('canvas');
-      Canvas.width = item.frame.width * ratio;
-      Canvas.height = item.frame.height * ratio;
-      Canvas.setAttribute('style', `position: absolute; left: 0px; top: 0px; width: ${item.frame.width}px; height: ${item.frame.height}px`);
-      const context: CanvasRenderingContext2D | null = Canvas.getContext('2d');
-      if (context) {
-        context.scale(ratio, ratio);
-        (layers || []).forEach((i:any) => {
-          const { fills = [], borders = [], contextSettings } = i.style || {};
-          const {
-            color: borderC = {}, thickness = 1, isEnabled = false, gradient: borderGradient = {}, fillType: borderFillType = 0,
-          } = borders.length > 0 ? borders[borders.length - 1] : {};
-          const borderColor = isEnabled ? `rgba(${borderC.red * 255}, ${borderC.green * 255}, ${borderC.blue * 255}, ${borderC.alpha})` : 'transparent';
-          const {
-            fillType = 0, gradient = {}, color = {}, isEnabled: isFillendable = false,
-          } = fills.length > 0 ? fills[fills.length - 1] : {};
-          let linerColor = null;
-          let borderGradientCorlor = null;
-          const fillStyle = isFillendable ? `rgba(${color.red * 255}, ${color.green * 255}, ${color.blue * 255}, ${color.alpha})` : 'transparent';
-          if (fillType === 1) {
-            linerColor = getCanvasGradient(context, gradient, i.frame.width, i.frame.height);
-          }
 
-          if (borderFillType === 1) {
-            borderGradientCorlor = getCanvasGradient(context, borderGradient, i.frame.width, i.frame.height);
-          }
-          context.save();
-          context.beginPath();
-          context.strokeStyle = borderFillType === 1 && borderGradientCorlor ? borderGradientCorlor : borderColor;
-          context.lineWidth = thickness;
-          context.globalAlpha = contextSettings.opacity || 1;
-          context.translate(i.frame.x, i.frame.y);
-          (i.points || []).forEach((j: any, idx: number) => {
-            const current = j.point.slice(1, j.point.length - 1).split(',');
-            const form = j.curveFrom.slice(1, j.curveFrom.length - 1).split(',');
-            const to = j.curveTo.slice(1, j.curveTo.length - 1).split(',');
-            if (!j.hasCurveFrom && !j.hasCurveTo) {
-              if (idx === 0) {
-                context.moveTo(Number(current[0]) * i.frame.width, Number(current[1]) * i.frame.height);
-              } else {
-                context.lineTo(Number(current[0]) * i.frame.width, Number(current[1]) * i.frame.height);
-              }
-            } else {
-              if (idx === 0) {
-                context.moveTo(Number(current[0]) * i.frame.width, Number(current[1]) * i.frame.height);
-              } else {
-                context.quadraticCurveTo(Number(form[0]) * i.frame.width, Number(form[1]) * i.frame.height, Number(to[0]) * i.frame.width, Number(to[1]) * i.frame.height);
-              }
-            }
-          });
-          context.fillStyle = i.windingRule !== 0 ? (fillType === 1 && linerColor ? linerColor : fillStyle || 'transparent') : 'transparent';
-          context.fill();
-          context.stroke();
-          context.closePath();
-          context.restore();
-        });
-      }
-      div.appendChild(Canvas);
-    }
+  const [paths, setPaths] = React.useState<any[]>([]);
+
+  useEffect(() => {
+    layers.forEach((i: any) => {
+      let result = '';
+      (i.points || []).forEach((j: any, idx: number) => {
+        const current = j.point.slice(1, j.point.length - 1).split(',');
+        const form = j.curveFrom.slice(1, j.curveFrom.length - 1).split(',');
+        const to = j.curveTo.slice(1, j.curveTo.length - 1).split(',');
+        const ML = `${idx === 0 ? 'M' : 'L'} ${Number(current[0]) * i.frame.width + i.frame.x} ${Number(current[1]) * i.frame.height + i.frame.y}`;
+        const C = `C${Number(form[0]) * i.frame.width + i.frame.x} ${Number(form[1]) * i.frame.height + i.frame.y} ${Number(to[0]) * i.frame.width + i.frame.x} ${Number(to[1]) * i.frame.height + i.frame.y} ${Number(current[0]) * i.frame.width + i.frame.x} ${Number(current[1]) * i.frame.height + i.frame.y}`;
+        result += `${ML} ${C}`;
+      });
+      setPaths((list) => list.concat([{ key: i.do_objectID, path: `${result} Z`, i }]));
+    });
   }, []);
   return (
-    <div id={`${id}-canvas`} />
+    <div style={{ position: 'absolute', top: 0, left: 0 }}>
+      <svg width={item.frame.width} height={item.frame.height} viewBox={`0 0 ${item.frame.width} ${item.frame.height}`}>
+        {(paths || []).map((i) => (
+          <path key={i.key} d={`${i.path}`} stroke="blue" strokeWidth="2" strokeLinecap="round" />
+        ))}
+      </svg>
+    </div>
   );
 };

@@ -7,6 +7,7 @@
 /* eslint-disable react/prefer-stateless-function */
 import React, { useEffect, useState } from 'react';
 import JsZip from 'jszip';
+// import sketch from 'sketch';
 import Portal from './portal';
 import Menu from './menu';
 import StyleComponent from './style';
@@ -16,6 +17,7 @@ import { overridListType, getStyleChildrenInfo } from './utils';
 import './index.less';
 
 const Test = () => {
+  // console.log('==sketc', sketch);
   const [imgs, setImgs] = useState<any[]>([]);
   const [pagesList, setPages] = useState<any[]>([]);
   const [currentId, setCurrent] = useState<string>('');
@@ -97,7 +99,7 @@ const Test = () => {
   const Layer1 = (layers: any[], wp: number, parentList: overridListType[] = []) => layers.map((item: any) => {
     const {
       currentStyle,
-      itemValueOverrid,
+      itemValueOverride,
       background,
       borderColor,
       borderType,
@@ -109,11 +111,14 @@ const Test = () => {
       overridList,
       borderFillType,
       borderGradient,
-      shapeTyle,
+      shapeStyle,
+      overrideSymbolID,
     } = getStyleChildrenInfo(item, documentSharedStyle, parentList, imgs, overId, wp);
 
-    // if (item.do_objectID === '6941B512-A88F-41A2-ABC3-A71D0770D075') {
-    //   console.log('==all', item, symbolMatsers.find((i: any) => i.symbolID === '0B739F4F-63F8-4B11-B22B-06D56F1D221C'));
+    // if (item.do_objectID === '82E81E45-C753-45A7-8CE8-0BAA5CBD7F29') {
+    //   console.log('==item', item);
+    //   console.log('==symstem', symbolMatsers.find((j: any) => j.symbolID === '39D2D360-9B36-4B0D-8DF8-AD71A410127B'));
+    //   // console.log('==shared', documentSharedStyle.find((j: any) => j.do_objectID === '66E8CFA7-0C3D-41C5-8AD1-757A5CD29481'));
     // }
 
     const infoObj = JSON.parse(JSON.stringify(currentStyle));
@@ -123,7 +128,7 @@ const Test = () => {
         key={item.do_objectID}
         className="layer"
         id={item.do_objectID}
-        style={item._class === 'shapePath' || dashPattern.length > 0 ? shapeTyle : currentStyle}
+        style={item._class === 'shapePath' || dashPattern.length > 0 ? shapeStyle : currentStyle}
         onClick={(e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
           e.stopPropagation();
           console.log('==item', item);
@@ -140,9 +145,9 @@ const Test = () => {
           ? <TestCanvas item={symbolMatsers.find((i: any) => i.symbolID === '0B739F4F-63F8-4B11-B22B-06D56F1D221C') || {}} />
           : (
             <>
-              {item.symbolID && Layer1(symbolMatsers.find((i: any) => item.symbolID === i.symbolID)?.layers || [], 1, overridList.length > 0 ? overridList : parentList)}
+              {(overrideSymbolID || item.symbolID) && Layer1(symbolMatsers.find((i: any) => (overrideSymbolID || item.symbolID) === i.symbolID)?.layers || [], 1, overridList.length > 0 ? overridList : parentList)}
               {Array.isArray(item?.layers) && Layer1(item?.layers, wp, overridList.length > 0 ? overridList : parentList)}
-              {(itemValueOverrid || item.attributedString) && <div style={{ whiteSpace: 'pre-wrap' }}>{itemValueOverrid || item.attributedString.string}</div>}
+              {(itemValueOverride || item.attributedString) && <div style={{ whiteSpace: 'pre-wrap' }}>{itemValueOverride || item.attributedString.string}</div>}
               {(item._class === 'shapePath' || dashPattern.length > 0)
                 && (
                   <Shape
@@ -156,6 +161,7 @@ const Test = () => {
                     opacity={opacity}
                     borderFillType={borderFillType}
                     borderGradient={borderGradient}
+                    dashPattern={dashPattern}
                   />
                 )}
             </>
