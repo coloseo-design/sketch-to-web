@@ -3,7 +3,7 @@
 /* eslint-disable max-len */
 /* eslint-disable import/prefer-default-export */
 
-export interface overridListType {
+export interface overrideListType {
   style?: any;
   oid: string;
   type: string;
@@ -116,30 +116,41 @@ export const getRectCircle = ( // 画虚线圆角矩形
 
 export const getColor = (color: any = {}) => `rgba(${(color.red * 255).toFixed(0)}, ${(color.green * 255).toFixed(0)}, ${(color.blue * 255).toFixed(0)}, ${color.alpha})`;
 
+export const getConvertedToNewRoundCorners = (points: any[] = []) => {
+  let radius = '';
+  (points || []).forEach((item: any) => {
+    radius += `${item.cornerRadius}px `;
+  });
+  return radius;
+};
+
 export const getStyleChildrenInfo = (
   item: any,
   documentSharedStyle: any[],
-  parentList: overridListType[],
+  parentList: overrideListType[],
   imgs: any[],
   overId: string,
   wp: number,
 ) => {
   const {
-    style = {}, image, isVisible, fixedRadius, overrideValues = [], isFlippedHorizontal, isFlippedVertical, windingRule, _class: className,
+    style = {}, image, isVisible,
+    fixedRadius, overrideValues = [],
+    isFlippedHorizontal, isFlippedVertical, windingRule, _class: className,
+    hasConvertedToNewRoundCorners, points,
   } = item || {};
   let parentStyle;
-  const overridList: overridListType[] = [];
+  const overrideList: overrideListType[] = [];
   overrideValues.forEach((i: any) => {
     const { value = '', overrideName = '' } = i || {};
     const keyIndex = overrideName.lastIndexOf('_');
-    const overridobjectID = overrideValues.length > 0 ? overrideName.slice(0, keyIndex) : '';
-    const overridType = overrideName.slice(keyIndex + 1);
+    const overrideObjectID = overrideValues.length > 0 ? overrideName.slice(0, keyIndex) : '';
+    const overrideType = overrideName.slice(keyIndex + 1);
     const overrideStyle = overrideValues.length > 0 ? documentSharedStyle.find((j) => j.do_objectID === value)?.value : undefined;
-    overridList.push({
+    overrideList.push({
       style: overrideStyle,
-      oid: overridobjectID,
-      type: overridType,
-      text: overridType === 'stringValue' || overridType === 'symbolID' ? value : undefined,
+      oid: overrideObjectID,
+      type: overrideType,
+      text: overrideType === 'stringValue' || overrideType === 'symbolID' ? value : undefined,
       parentId: item.do_objectID,
     });
   });
@@ -192,16 +203,16 @@ export const getStyleChildrenInfo = (
 
   // 阴影样式
   const {
-    blurRadius, color: cshadow, isEnabled: isShadow, offsetX: x, offsetY: y, spread,
+    blurRadius, color: cShadow, isEnabled: isShadow, offsetX: x, offsetY: y, spread,
   } = shadows[0] || {};
-  const boxShadow = isShadow ? `${x}px ${y}px ${blurRadius}px ${spread}px ${getColor(cshadow)}` : undefined;
+  const boxShadow = isShadow ? `${x}px ${y}px ${blurRadius}px ${spread}px ${getColor(cShadow)}` : undefined;
   const background = isFillendable ? getColor(bgColor) : undefined;
   const linearGradient = getGradient(gradient);
   const borderColor = isEnabled ? (borderFillType === 1 ? getGradient(borderGradient) : getColor(borderC)) : 'transparent';
   const borderType = borderOpEnabled && dashPattern.length > 0 ? 'dashed' : 'solid';
   const borderWidth = thickness;
   const border = isEnabled ? `${thickness}px ${borderType} ${borderColor}` : undefined;
-  const radius = fixedRadius ? `${fixedRadius}px` : className === 'oval' ? '50%' : undefined;
+  const radius = hasConvertedToNewRoundCorners ? getConvertedToNewRoundCorners(points) : fixedRadius ? `${fixedRadius}px` : className === 'oval' ? '50%' : undefined;
 
   // 填充图片
   let src;
@@ -211,8 +222,9 @@ export const getStyleChildrenInfo = (
     src = currentImg ? currentImg.src : undefined;
   }
 
-  // isFlippedHorizontal, isFlippedVertical
-  const rotate = 360 - (item.rotation || 0);
+  const flip = isFlippedHorizontal || isFlippedVertical ? 180 : 0;
+
+  const rotate = item.rotation ? 360 - item.rotation + flip : 0;
 
   // NSNonZeroWindingRule：非零缠绕。射线从左到右每交叉路径一次+1，从右到左每交叉一次-1。如果最终交叉数为0，则该点在路径之外；如果交叉数不为0，则在路径之内。默认缠绕规则。
   // windingRule === 0 不需要填充
@@ -229,7 +241,7 @@ export const getStyleChildrenInfo = (
     textAlign,
     background: (windingRule !== 0 && className !== 'shapeGroup' && className !== 'text') ? (fillType === 1 ? `${linearGradient}` : background) : undefined,
     boxShadow,
-    transform: isFlippedHorizontal ? 'rotateY(180deg)' : isFlippedVertical ? 'rotateX(180deg)' : rotate ? `rotate(${rotate}deg)` : undefined,
+    transform: rotate ? `rotate(${rotate}deg)` : isFlippedHorizontal ? 'rotateY(180deg)' : isFlippedVertical ? 'rotateX(180deg)' : undefined,
     display: isVisible ? undefined : 'none',
     opacity: contextSettings.opacity,
     lineHeight,
@@ -263,7 +275,7 @@ export const getStyleChildrenInfo = (
     dashPattern: borderOpEnabled ? dashPattern : [],
     gradient,
     fillType,
-    overridList,
+    overrideList,
     borderFillType,
     borderGradient,
     shapeStyle,

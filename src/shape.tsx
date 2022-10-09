@@ -24,46 +24,38 @@ const Shape = (props: any) => {
   useEffect(() => {
     const div = document.getElementById(`${id}`);
     let linerColor = null;
-    let borderGradientCorlor = null;
-    if (item.do_objectID === '246CB8D9-9384-4EAE-8755-EDBA22F4F6E1') {
-      console.log('==circle', item, dashPattern);
-    }
+    let borderGradientColor = null;
     if (div) {
       const Canvas = document.createElement('canvas');
       if (Canvas) {
         const ratio = window.devicePixelRatio || 1;
         Canvas.width = item.frame.width * ratio;
         Canvas.height = item.frame.height * ratio;
-        // const { width: w = 350, height: h } = item.frame || {};
-        const w = 350;
-        const h = 350;
         Canvas.setAttribute('style', `position: absolute; left: 0px; top: 0px; width: ${item.frame.width}px; height: ${item.frame.height}px`);
         const context: CanvasRenderingContext2D | null = Canvas.getContext('2d');
         if (context) {
           context.scale(ratio, ratio);
           context.globalAlpha = opacity;
-          if (fillType === 1) {
+          if (fillType === 1) { // 渐变填充
             linerColor = getCanvasGradient(context, gradient, item.frame.width, item.frame.height);
           }
-          if (borderFillType === 1) {
-            borderGradientCorlor = getCanvasGradient(context, borderGradient, item.frame.width, item.frame.height);
+          if (borderFillType === 1) { // border 渐变填充
+            borderGradientColor = getCanvasGradient(context, borderGradient, item.frame.width, item.frame.height);
           }
           if (dashPattern.length > 0) {
             if (item._class === 'oval') { // 圆
-              getCircle(context, item, borderFillType === 1 ? borderGradientCorlor : borderColor, dashPattern, lineWidth, fillType, linerColor, fillStyle);
+              getCircle(context, item, borderFillType === 1 ? borderGradientColor : borderColor, dashPattern, lineWidth, fillType, linerColor, fillStyle);
             } else { // 矩形圆
-              getRectCircle(context, item, lineWidth, borderFillType === 1 ? borderGradientCorlor : borderColor, dashPattern, fillType, linerColor, fillStyle);
+              getRectCircle(context, item, lineWidth, borderFillType === 1 ? borderGradientColor : borderColor, dashPattern, fillType, linerColor, fillStyle);
             }
           } else { // 普通图形
             context.beginPath();
-            context.strokeStyle = borderFillType === 1 && borderGradientCorlor ? borderGradientCorlor : borderColor;
+            context.strokeStyle = borderFillType === 1 && borderGradientColor ? borderGradientColor : borderColor;
             context.lineWidth = lineWidth;
-            const list: any = [];
             (item.points || []).forEach((i: any, idx: number) => {
               const current = i.point.slice(1, i.point.length - 1).split(',');
-              const form = i.curveFrom.slice(1, i.curveFrom.length - 1).split(',');
+              const from = i.curveFrom.slice(1, i.curveFrom.length - 1).split(',');
               const to = i.curveTo.slice(1, i.curveTo.length - 1).split(',');
-              list.push([[form[0] * w, form[1] * h], [current[0] * w, current[1] * h], [to[0] * w, to[1] * h]]);
 
               if (idx === 0) {
                 context.moveTo(Number(current[0]) * item.frame.width, Number(current[1]) * item.frame.height);

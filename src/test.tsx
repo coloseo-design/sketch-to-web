@@ -12,7 +12,7 @@ import Portal from './portal';
 import Menu from './menu';
 import StyleComponent from './style';
 import Shape, { TestCanvas } from './shape';
-import { overridListType, getStyleChildrenInfo } from './utils';
+import { overrideListType, getStyleChildrenInfo } from './utils';
 
 import './index.less';
 
@@ -96,7 +96,7 @@ const Test = () => {
 
   const pages = pagesList.find((item) => item.do_objectID === currentId)?.layers || pagesList[0]?.layers || [];
 
-  const Layer1 = (layers: any[], wp: number, parentList: overridListType[] = []) => layers.map((item: any) => {
+  const Layer1 = (layers: any[], wp: number, parentList: overrideListType[] = []) => layers.map((item: any) => {
     const {
       currentStyle,
       itemValueOverride,
@@ -108,17 +108,18 @@ const Test = () => {
       dashPattern,
       gradient,
       fillType,
-      overridList,
+      overrideList,
       borderFillType,
       borderGradient,
       shapeStyle,
       overrideSymbolID,
     } = getStyleChildrenInfo(item, documentSharedStyle, parentList, imgs, overId, wp);
 
-    // if (item.do_objectID === '82E81E45-C753-45A7-8CE8-0BAA5CBD7F29') {
+    // if (item.do_objectID === '325D5E5F-07A7-4EEE-8CE0-B6E20DE0D561') {
     //   console.log('==item', item);
-    //   console.log('==symstem', symbolMatsers.find((j: any) => j.symbolID === '39D2D360-9B36-4B0D-8DF8-AD71A410127B'));
-    //   // console.log('==shared', documentSharedStyle.find((j: any) => j.do_objectID === '66E8CFA7-0C3D-41C5-8AD1-757A5CD29481'));
+    //   console.log('==symstem', symbolMatsers.find((j: any) => j.symbolID === 'F20FE780-AB3A-410C-9460-5AE7CBF47929'));
+    //   console.log('==取消', symbolMatsers.find((j: any) => j.symbolID === '55EF4653-4931-4391-A71C-B90CD9522F56'));
+    //   console.log('==确定', symbolMatsers.find((j: any) => j.symbolID === 'ECA58AEE-7202-49A5-BAE9-F9DAE40BF5F6'));
     // }
 
     const infoObj = JSON.parse(JSON.stringify(currentStyle));
@@ -145,8 +146,8 @@ const Test = () => {
           ? <TestCanvas item={symbolMatsers.find((i: any) => i.symbolID === '0B739F4F-63F8-4B11-B22B-06D56F1D221C') || {}} />
           : (
             <>
-              {(overrideSymbolID || item.symbolID) && Layer1(symbolMatsers.find((i: any) => (overrideSymbolID || item.symbolID) === i.symbolID)?.layers || [], 1, overridList.length > 0 ? overridList : parentList)}
-              {Array.isArray(item?.layers) && Layer1(item?.layers, wp, overridList.length > 0 ? overridList : parentList)}
+              {(overrideSymbolID || item.symbolID) && Layer1(symbolMatsers.find((i: any) => (overrideSymbolID || item.symbolID) === i.symbolID)?.layers || [], 1, overrideList.length > 0 ? overrideList : parentList)}
+              {Array.isArray(item?.layers) && Layer1(item?.layers, wp, overrideList.length > 0 ? overrideList : parentList)}
               {(itemValueOverride || item.attributedString) && <div style={{ whiteSpace: 'pre-wrap' }}>{itemValueOverride || item.attributedString.string}</div>}
               {(item._class === 'shapePath' || dashPattern.length > 0)
                 && (
