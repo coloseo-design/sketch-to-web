@@ -115,11 +115,9 @@ const Test = () => {
       overrideSymbolID,
     } = getStyleChildrenInfo(item, documentSharedStyle, parentList, imgs, overId, wp);
 
-    // if (item.do_objectID === '325D5E5F-07A7-4EEE-8CE0-B6E20DE0D561') {
+    // if (item.do_objectID === '36B19606-A37F-4118-88A8-4D9C78390550') {
     //   console.log('==item', item);
-    //   console.log('==symstem', symbolMatsers.find((j: any) => j.symbolID === 'F20FE780-AB3A-410C-9460-5AE7CBF47929'));
-    //   console.log('==取消', symbolMatsers.find((j: any) => j.symbolID === '55EF4653-4931-4391-A71C-B90CD9522F56'));
-    //   console.log('==确定', symbolMatsers.find((j: any) => j.symbolID === 'ECA58AEE-7202-49A5-BAE9-F9DAE40BF5F6'));
+    //   console.log('==symstem', symbolMatsers.find((j: any) => j.symbolID === '001636C3-EEDD-4057-8E76-BCE73CFC53ED'));
     // }
 
     const infoObj = JSON.parse(JSON.stringify(currentStyle));
@@ -148,7 +146,7 @@ const Test = () => {
             <>
               {(overrideSymbolID || item.symbolID) && Layer1(symbolMatsers.find((i: any) => (overrideSymbolID || item.symbolID) === i.symbolID)?.layers || [], 1, overrideList.length > 0 ? overrideList : parentList)}
               {Array.isArray(item?.layers) && Layer1(item?.layers, wp, overrideList.length > 0 ? overrideList : parentList)}
-              {(itemValueOverride || item.attributedString) && <div style={{ whiteSpace: 'pre-wrap' }}>{itemValueOverride || item.attributedString.string}</div>}
+              {itemValueOverride || item.attributedString?.string}
               {(item._class === 'shapePath' || dashPattern.length > 0)
                 && (
                   <Shape

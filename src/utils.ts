@@ -23,6 +23,12 @@ const alignMap: any = {
   3: 'justify',
 };
 
+const textMap: any = {
+  0: 'nowrap',
+  1: 'pre-wrap',
+  2: 'nowrap', // 应该是省略号
+};
+
 export const uuid = (): string => {
   function S4() {
     return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
@@ -137,6 +143,7 @@ export const getStyleChildrenInfo = (
     fixedRadius, overrideValues = [],
     isFlippedHorizontal, isFlippedVertical, windingRule, _class: className,
     hasConvertedToNewRoundCorners, points,
+    textBehaviour,
   } = item || {};
   let parentStyle;
   const overrideList: overrideListType[] = [];
@@ -179,13 +186,17 @@ export const getStyleChildrenInfo = (
   let family;
   let textAlign;
   let lineHeight;
+  let whiteSpace;
   if (Object.keys(textStyle).length) { // 文字样式
+    const text = itemValueOverride || item.attributedString?.string;
+    const reg = /[\n]/;
     const { MSAttributedStringColorAttribute = {}, MSAttributedStringFontAttribute = {}, paragraphStyle = {} } = textStyle.encodedAttributes || {};
     color = getColor(MSAttributedStringColorAttribute);
     font = MSAttributedStringFontAttribute?.attributes?.size;
     family = MSAttributedStringFontAttribute?.attributes?.name;
     textAlign = alignMap[paragraphStyle.alignment || 0];
     lineHeight = paragraphStyle.maximumLineHeight ? `${paragraphStyle.maximumLineHeight}px` : undefined;
+    whiteSpace = text.match(reg) ? 'pre-wrap' : typeof textBehaviour !== 'undefined' ? textMap[textBehaviour] : undefined;
   }
 
   // fillType === 0 背景 使用color填充， 1 使用Gradient渐变填充 2 使用 Pattern 图案填充
@@ -243,10 +254,13 @@ export const getStyleChildrenInfo = (
     boxShadow,
     transform: rotate ? `rotate(${rotate}deg)` : isFlippedHorizontal ? 'rotateY(180deg)' : isFlippedVertical ? 'rotateX(180deg)' : undefined,
     display: isVisible ? undefined : 'none',
-    opacity: contextSettings.opacity,
+    opacity: contextSettings.opacity === 1 ? undefined : contextSettings.opacity,
     lineHeight,
     borderRadius: radius,
     boxSizing: isEnabled ? 'border-box' : undefined,
+    whiteSpace,
+    textOverflow: textBehaviour === 2 ? 'ellipsis' : undefined,
+    overflow: textBehaviour === 2 ? 'hidden' : undefined,
   };
   if (className === 'bitmap') { // 图片
     Object.assign(currentStyle, {
