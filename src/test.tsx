@@ -11,13 +11,12 @@ import JsZip from 'jszip';
 import Portal from './portal';
 import Menu from './menu';
 import StyleComponent from './style';
-import Shape, { TestCanvas } from './shape';
+import Shape, { TestCanvas, PointSvg } from './shape';
 import { overrideListType, getStyleChildrenInfo } from './utils';
 
 import './index.less';
 
 const Test = () => {
-  // console.log('==sketc', sketch);
   const [imgs, setImgs] = useState<any[]>([]);
   const [pagesList, setPages] = useState<any[]>([]);
   const [currentId, setCurrent] = useState<string>('');
@@ -25,7 +24,7 @@ const Test = () => {
   const [info, setInfo] = useState('');
   const [overId, setOverId] = useState('');
   const [documentSharedStyle, setSharedStyle] = useState<any[]>([]);
-  const [symbolMatsers, setMasters] = useState<any[]>([]);
+  const [symbolMasters, setMasters] = useState<any[]>([]);
 
   const bodyClick = () => {
     setShow(false);
@@ -61,11 +60,11 @@ const Test = () => {
               };
             });
           }
-          // if (value.startsWith('meta')) {
-          //   key.async('string').then((content: any) => {
-          //     console.log('---??meta', JSON.parse(content));
-          //   });
-          // }
+          if (value.startsWith('meta')) {
+            key.async('string').then((content: any) => {
+              console.log('---??meta', JSON.parse(content));
+            });
+          }
           if (value.startsWith('images')) {
             key.async('base64').then((content: any) => {
               setImgs((img) => img.concat([{ key: key.name, src: `data:image/png;base64,${content}` }]));
@@ -95,6 +94,7 @@ const Test = () => {
   };
 
   const pages = pagesList.find((item) => item.do_objectID === currentId)?.layers || pagesList[0]?.layers || [];
+  // console.log('==pagesList', pages);
 
   const Layer1 = (layers: any[], wp: number, parentList: overrideListType[] = []) => layers.map((item: any) => {
     const {
@@ -115,12 +115,28 @@ const Test = () => {
       overrideSymbolID,
     } = getStyleChildrenInfo(item, documentSharedStyle, parentList, imgs, overId, wp);
 
-    // if (item.do_objectID === '36B19606-A37F-4118-88A8-4D9C78390550') {
-    //   console.log('==item', item);
-    //   console.log('==symstem', symbolMatsers.find((j: any) => j.symbolID === '001636C3-EEDD-4057-8E76-BCE73CFC53ED'));
-    // }
+    const { exportOptions = {} } = item;
+
+    let isSvg = false;
+
+    const { exportFormats = [] } = exportOptions;
+    if (exportFormats.length > 0 && exportFormats.find((i: any) => i.fileFormat === 'svg')) {
+      isSvg = true;
+    }
+
+    const testSymbol = symbolMasters.find((i: any) => i.symbolID === '0B739F4F-63F8-4B11-B22B-06D56F1D221C');
+    const testSymbol1 = symbolMasters.find((i: any) => i.symbolID === '24FB2378-4892-43ED-8634-20DBB9D21639');
 
     const infoObj = JSON.parse(JSON.stringify(currentStyle));
+    const temList = overrideList.length > 0 ? overrideList : parentList;
+    const currentSymbolMaster = symbolMasters.find((i: any) => {
+      const id = overrideSymbolID || item.symbolID;
+      return id === i.symbolID;
+    })?.layers || [];
+
+    if (item.do_objectID === '0BDC9B81-AA59-4DFF-AE17-23DE9B0C651B') {
+      console.log('==item', item);
+    }
 
     return (
       <div
@@ -140,16 +156,16 @@ const Test = () => {
           setOverId(item.do_objectID);
         }}
       >
-        {item.do_objectID === '6941B512-A88F-41A2-ABC3-A71D0770D075'
-          ? <TestCanvas item={symbolMatsers.find((i: any) => i.symbolID === '0B739F4F-63F8-4B11-B22B-06D56F1D221C') || {}} />
+        {/* {(item.do_objectID === '6941B512-A88F-41A2-ABC3-A71D0770D075')
+          ? <TestCanvas item={testSymbol || {}} />
           : (
-            <>
-              {(overrideSymbolID || item.symbolID) && Layer1(symbolMatsers.find((i: any) => (overrideSymbolID || item.symbolID) === i.symbolID)?.layers || [], 1, overrideList.length > 0 ? overrideList : parentList)}
-              {Array.isArray(item?.layers) && Layer1(item?.layers, wp, overrideList.length > 0 ? overrideList : parentList)}
-              {itemValueOverride || item.attributedString?.string}
-              {(item._class === 'shapePath' || dashPattern.length > 0)
+            <> */}
+        {(overrideSymbolID || item.symbolID) && Layer1(currentSymbolMaster, 1, temList)}
+        {Array.isArray(item?.layers) && Layer1(item?.layers, wp, temList)}
+        {itemValueOverride || item.attributedString?.string || (item._class === 'text' && item.name)}
+        {(item._class === 'shapePath' || dashPattern.length > 0)
                 && (
-                  <Shape
+                  <PointSvg
                     item={item}
                     lineWidth={borderWidth}
                     borderColor={borderColor}
@@ -163,8 +179,9 @@ const Test = () => {
                     dashPattern={dashPattern}
                   />
                 )}
-            </>
-          )}
+        {/* </>
+          )} */}
+
       </div>
     );
   });

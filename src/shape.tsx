@@ -1,11 +1,14 @@
+/* eslint-disable react/no-array-index-key */
+/* eslint-disable react/style-prop-object */
 /* eslint-disable no-lonely-if */
 /* eslint-disable no-nested-ternary */
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable max-len */
 import React, { useEffect } from 'react';
 import {
-  getCanvasGradient, getCircle, getRectCircle, uuid,
+  getCanvasGradient, getCircle, getRectCircle, uuid, getColor,
 } from './utils';
+import pathParser from './parser';
 
 const Shape = (props: any) => {
   const {
@@ -85,30 +88,172 @@ export default Shape;
 export const TestCanvas = (props: any) => {
   const id = uuid();
   const { item } = props;
-  const { layers } = item;
+  const { layers = [] } = item;
 
   const [paths, setPaths] = React.useState<any[]>([]);
 
   useEffect(() => {
     layers.forEach((i: any) => {
-      let result = '';
-      (i.points || []).forEach((j: any, idx: number) => {
-        const current = j.point.slice(1, j.point.length - 1).split(',');
-        const form = j.curveFrom.slice(1, j.curveFrom.length - 1).split(',');
-        const to = j.curveTo.slice(1, j.curveTo.length - 1).split(',');
-        const ML = `${idx === 0 ? 'M' : 'L'} ${Number(current[0]) * i.frame.width + i.frame.x} ${Number(current[1]) * i.frame.height + i.frame.y}`;
-        const C = `C${Number(form[0]) * i.frame.width + i.frame.x} ${Number(form[1]) * i.frame.height + i.frame.y} ${Number(to[0]) * i.frame.width + i.frame.x} ${Number(to[1]) * i.frame.height + i.frame.y} ${Number(current[0]) * i.frame.width + i.frame.x} ${Number(current[1]) * i.frame.height + i.frame.y}`;
-        result += `${ML} ${C}`;
-      });
-      setPaths((list) => list.concat([{ key: i.do_objectID, path: `${result} Z`, i }]));
+      const { style = {} } = i || {};
+      const { fills = [], borders = [] } = style;
+      const {
+        fillType = 0, color: bgColor = {}, isEnabled: isFillendable = false, gradient = {},
+      } = fills.length > 0 ? fills[0] : {};
+      const {
+        color: borderC = {}, thickness = 1, isEnabled = false, gradient: borderGradient = {}, fillType: borderFillType = 0,
+      } = borders.length > 0 ? borders[borders.length - 1] : {};
+
+      setPaths((list) => list.concat([{
+        svgId: i.do_objectID,
+        path: pathParser(i),
+        svgStyle: {
+          fillType,
+          gradient,
+          bgColor: getColor(bgColor),
+          borderGradient,
+          borderColor: getColor(borderC),
+          borderWidth: thickness,
+          borderFillType,
+        },
+        ...i,
+      }]));
     });
   }, []);
+
   return (
-    <div style={{ position: 'absolute', top: 0, left: 0 }}>
-      <svg width={item.frame.width} height={item.frame.height} viewBox={`0 0 ${item.frame.width} ${item.frame.height}`}>
-        {(paths || []).map((i) => (
-          <path key={i.key} d={`${i.path}`} stroke="blue" strokeWidth="2" strokeLinecap="round" />
-        ))}
+    // <div style={{ position: 'absolute', top: 0, left: 0 }}>
+    //   <svg id={item.do_objectID} width={item.frame.width} height={item.frame.height} viewBox={`0 0 ${item.frame.width} ${item.frame.height}`}>
+    //     {(paths || []).map((i) => (
+    //       <>
+    //         {typeof i.svgStyle.fillType !== 'undefined'
+    //           && (
+    //             <defs>
+    //               <linearGradient id={`${i.svgId}`} x1="0%" y1="0%" x2="100%" y2="0%">
+    //                 {(i.svgStyle.gradient.stops || []).map((j: any, idx: number) => (
+    //                   <stop key={idx} offset={`${j.position * 100}%`} stopColor={`${getColor(j.color)}`} />
+    //                 ))}
+    //               </linearGradient>
+    //             </defs>
+    //           )}
+    //         {
+    //         i.svgStyle.borderFillType === 1
+    //           && (
+    //             <defs>
+    //               <linearGradient id={`${i.svgId}-stroke`} x1="0%" y1="0%" x2="100%" y2="0%">
+    //                 {(i.svgStyle.borderGradient.stops || []).map((j: any, idx: number) => (
+    //                   <stop key={idx} offset={`${j.position * 100}%`} stopColor={`${getColor(j.color)}`} />
+    //                 ))}
+    //               </linearGradient>
+    //             </defs>
+    //           )
+    //         }
+    //         <path d={`${i.path}`} fill={`url(#${i.svgId})`} stroke={i.svgStyle.borderFillType === 1 ? `url(#${i.svgId}-stroke)` : `${i.svgStyle.borderColor}`} strokeWidth={`${i.svgStyle.borderWidth}`} />
+    //       </>
+    //     ))}
+    //   </svg>
+    // </div>
+    <>
+      {(paths || []).map((i) => (
+        <div
+          key={i.svgId}
+          style={{
+            position: 'absolute',
+            top: i.frame.y,
+            left: i.frame.x,
+            height: i.frame.height,
+            width: i.frame.width,
+          }}
+        >
+          <svg style={{ minWidth: i.frame.width, minHeight: i.frame.height }}>
+            {typeof i.svgStyle.fillType !== 'undefined'
+                   && (
+                   <defs>
+                     <linearGradient id={`${i.svgId}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                       {(i.svgStyle.gradient.stops || []).map((j: any, idx: number) => (
+                         <stop key={idx} offset={`${j.position * 100}%`} stopColor={`${getColor(j.color)}`} />
+                       ))}
+                     </linearGradient>
+                   </defs>
+                   )}
+            {
+            i.svgStyle.borderFillType === 1
+              && (
+                <defs>
+                  <linearGradient id={`${i.svgId}-stroke`} x1="0%" y1="0%" x2="100%" y2="0%">
+                    {(i.svgStyle.borderGradient.stops || []).map((j: any, idx: number) => (
+                      <stop key={idx} offset={`${j.position * 100}%`} stopColor={`${getColor(j.color)}`} />
+                    ))}
+                  </linearGradient>
+                </defs>
+              )
+            }
+            <path d={`${i.path}`} fill={`url(#${i.svgId})`} stroke={i.svgStyle.borderFillType === 1 ? `url(#${i.svgId}-stroke)` : `${i.svgStyle.borderColor}`} strokeWidth={`${i.svgStyle.borderWidth}`} />
+          </svg>
+        </div>
+      ))}
+    </>
+  );
+};
+
+export const PointSvg = (props: any) => {
+  const {
+    item,
+    lineWidth = 1, // 线宽
+    borderColor = 'transparent', // 线条颜色
+    fillStyle = 'transparent', // 填充色
+    gradient = {}, // 填充渐变
+    fillType = 0, // 填充类型
+    opacity = 1,
+    dashPattern = [], // 虚线
+    borderFillType = 0, // 线的填充类型
+    borderGradient = {}, // 线的渐变
+  } = props;
+
+  const svgInfo = pathParser(item);
+  // FCE9ED37-B213-4178-B1DB-0C863A34A48D 锁的id
+  return (
+    <div
+      key={item.do_objectID}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        height: item.frame.height,
+        width: item.frame.width,
+      }}
+    >
+      <svg
+        style={{
+          position: 'absolute',
+          minHeight: 500,
+          minWidth: 500,
+          top: -item.frame.y,
+          left: -item.frame.x,
+        }}
+      >
+        {fillType === 1
+           && (
+           <defs>
+             <linearGradient id={`${item.do_objectID}-fill`} x1="0%" y1="0%" x2="100%" y2="0%">
+               {(gradient?.stops || []).map((j: any, idx: number) => (
+                 <stop key={idx} offset={`${j.position * 100}%`} stopColor={`${getColor(j.color)}`} />
+               ))}
+             </linearGradient>
+           </defs>
+           )}
+        {
+    borderFillType === 1
+      && (
+        <defs>
+          <linearGradient id={`${item.do_objectID}-stroke`} x1="0%" y1="0%" x2="100%" y2="0%">
+            {(borderGradient?.stops || []).map((j: any, idx: number) => (
+              <stop key={idx} offset={`${j.position * 100}%`} stopColor={`${getColor(j.color)}`} />
+            ))}
+          </linearGradient>
+        </defs>
+      )
+    }
+        <path d={svgInfo} strokeLinecap="round" opacity={opacity} fill={fillType === 1 ? `url(#${item.do_objectID}-fill)` : fillStyle} stroke={borderFillType === 1 ? `url(#${item.do_objectID}-stroke)` : borderColor} strokeWidth={lineWidth} strokeDasharray={dashPattern.length > 0 ? `${dashPattern[0]} ${dashPattern[1]}` : ''} />
       </svg>
     </div>
   );

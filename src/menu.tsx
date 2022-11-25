@@ -18,6 +18,8 @@ const MenuDiv = styled.div`
   overflow: auto;
   background-color: #fff;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
 `;
 
 const Menu: React.FC<MenuProps> = (props) => {

@@ -188,7 +188,7 @@ export const getStyleChildrenInfo = (
   let lineHeight;
   let whiteSpace;
   if (Object.keys(textStyle).length) { // 文字样式
-    const text = itemValueOverride || item.attributedString?.string;
+    const text = itemValueOverride || item.attributedString?.string || '';
     const reg = /[\n]/;
     const { MSAttributedStringColorAttribute = {}, MSAttributedStringFontAttribute = {}, paragraphStyle = {} } = textStyle.encodedAttributes || {};
     color = getColor(MSAttributedStringColorAttribute);
