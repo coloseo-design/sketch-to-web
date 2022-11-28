@@ -11,7 +11,7 @@ import JsZip from 'jszip';
 import Portal from './portal';
 import Menu from './menu';
 import StyleComponent from './style';
-import Shape, { TestCanvas, PointSvg } from './shape';
+import PointSvg from './shape';
 import { overrideListType, getStyleChildrenInfo } from './utils';
 
 import './index.less';
@@ -62,7 +62,7 @@ const Test = () => {
           }
           if (value.startsWith('meta')) {
             key.async('string').then((content: any) => {
-              console.log('---??meta', JSON.parse(content));
+              // console.log('---??meta', JSON.parse(content));
             });
           }
           if (value.startsWith('images')) {
@@ -75,7 +75,7 @@ const Test = () => {
               const documentsInfo = JSON.parse(content);
               const { layerStyles = {}, layerTextStyles = {} } = documentsInfo;
               setSharedStyle([...(layerStyles.objects || []), ...(layerTextStyles.objects || [])]);
-              console.log('---??document', JSON.parse(content));
+              // console.log('---??document', JSON.parse(content));
             });
           }
 
@@ -94,7 +94,6 @@ const Test = () => {
   };
 
   const pages = pagesList.find((item) => item.do_objectID === currentId)?.layers || pagesList[0]?.layers || [];
-  // console.log('==pagesList', pages);
 
   const Layer1 = (layers: any[], wp: number, parentList: overrideListType[] = []) => layers.map((item: any) => {
     const {
@@ -115,18 +114,6 @@ const Test = () => {
       overrideSymbolID,
     } = getStyleChildrenInfo(item, documentSharedStyle, parentList, imgs, overId, wp);
 
-    const { exportOptions = {} } = item;
-
-    let isSvg = false;
-
-    const { exportFormats = [] } = exportOptions;
-    if (exportFormats.length > 0 && exportFormats.find((i: any) => i.fileFormat === 'svg')) {
-      isSvg = true;
-    }
-
-    const testSymbol = symbolMasters.find((i: any) => i.symbolID === '0B739F4F-63F8-4B11-B22B-06D56F1D221C');
-    const testSymbol1 = symbolMasters.find((i: any) => i.symbolID === '24FB2378-4892-43ED-8634-20DBB9D21639');
-
     const infoObj = JSON.parse(JSON.stringify(currentStyle));
     const temList = overrideList.length > 0 ? overrideList : parentList;
     const currentSymbolMaster = symbolMasters.find((i: any) => {
@@ -134,8 +121,14 @@ const Test = () => {
       return id === i.symbolID;
     })?.layers || [];
 
-    if (item.do_objectID === '0BDC9B81-AA59-4DFF-AE17-23DE9B0C651B') {
+    if (item.do_objectID === 'FCE9ED37-B213-4178-B1DB-0C863A34A48D') {
       console.log('==item', item);
+    }
+    if (item.do_objectID === '9F6905D1-FDF5-41EB-8377-90D5E9F4090E') {
+      console.log('==parent', item);
+    }
+    if (item.do_objectID === '31EFFF86-3683-4FCC-8611-E9C15B31E3BB') {
+      console.log('==???another child', item);
     }
 
     return (
@@ -146,7 +139,6 @@ const Test = () => {
         style={item._class === 'shapePath' || dashPattern.length > 0 ? shapeStyle : currentStyle}
         onClick={(e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
           e.stopPropagation();
-          console.log('==item', item);
           setShow(true);
           setInfo(Object.assign(infoObj, {
             top: undefined,
@@ -156,31 +148,25 @@ const Test = () => {
           setOverId(item.do_objectID);
         }}
       >
-        {/* {(item.do_objectID === '6941B512-A88F-41A2-ABC3-A71D0770D075')
-          ? <TestCanvas item={testSymbol || {}} />
-          : (
-            <> */}
         {(overrideSymbolID || item.symbolID) && Layer1(currentSymbolMaster, 1, temList)}
         {Array.isArray(item?.layers) && Layer1(item?.layers, wp, temList)}
         {itemValueOverride || item.attributedString?.string || (item._class === 'text' && item.name)}
         {(item._class === 'shapePath' || dashPattern.length > 0)
-                && (
-                  <PointSvg
-                    item={item}
-                    lineWidth={borderWidth}
-                    borderColor={borderColor}
-                    borderType={borderType}
-                    fillStyle={background}
-                    gradient={gradient}
-                    fillType={fillType}
-                    opacity={opacity}
-                    borderFillType={borderFillType}
-                    borderGradient={borderGradient}
-                    dashPattern={dashPattern}
-                  />
-                )}
-        {/* </>
-          )} */}
+          && (
+            <PointSvg
+              item={item}
+              lineWidth={borderWidth}
+              borderColor={borderColor}
+              borderType={borderType}
+              fillStyle={background}
+              gradient={gradient}
+              fillType={fillType}
+              opacity={opacity}
+              borderFillType={borderFillType}
+              borderGradient={borderGradient}
+              dashPattern={dashPattern}
+            />
+          )}
 
       </div>
     );
@@ -189,9 +175,9 @@ const Test = () => {
   return (
     <div style={{ display: 'flex' }}>
       {pagesList.length > 0 && (
-      <Portal>
-        <Menu pages={pagesList} currentId={currentId} setCurrent={setCurrent} />
-      </Portal>
+        <Portal>
+          <Menu pages={pagesList} currentId={currentId} setCurrent={setCurrent} />
+        </Portal>
       )}
       {show && (
       <Portal>
@@ -210,32 +196,32 @@ const Test = () => {
         }}
         >
           {pagesList.length > 0 && (
-          <div style={{ position: 'relative', left: 200 }}>
-            {(pages || []).map((item: any) => {
-              let background;
-              const { backgroundColor: b, hasBackgroundColor, _class } = item || {};
-              if (hasBackgroundColor && _class === 'artboard') {
-                background = `rgba(${b.red * 255}, ${b.green * 255}, ${b.blue * 255}, ${b.alpha})`;
-              }
-              return (
-                <div
-                  key={item.do_objectID}
-                  style={{
-                    position: 'relative',
-                    width: item.frame.width,
-                    height: item.frame.height,
-                    // top: item.frame.y,
-                    // left: item.frame.x,
-                    top: 0,
-                    left: 0,
-                    background,
-                  }}
-                >
-                  {Layer1(item.layers, 1)}
-                </div>
-              );
-            })}
-          </div>
+            <div style={{ position: 'relative', left: 200 }}>
+              {(pages || []).map((item: any) => {
+                let background;
+                const { backgroundColor: b, hasBackgroundColor, _class } = item || {};
+                if (hasBackgroundColor && _class === 'artboard') {
+                  background = `rgba(${b.red * 255}, ${b.green * 255}, ${b.blue * 255}, ${b.alpha})`;
+                }
+                return (
+                  <div
+                    key={item.do_objectID}
+                    style={{
+                      position: 'relative',
+                      width: item.frame.width,
+                      height: item.frame.height,
+                      // top: item.frame.y,
+                      // left: item.frame.x,
+                      top: 0,
+                      left: 0,
+                      background,
+                    }}
+                  >
+                    {Layer1(item.layers, 1)}
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>
