@@ -12,7 +12,7 @@ import Portal from './portal';
 import Menu from './menu';
 import StyleComponent from './style';
 import PointSvg from './shape';
-import { overrideListType, getStyleChildrenInfo } from './utils';
+import { overrideListType, getStyleChildrenInfo, getColor } from './utils';
 
 import './index.less';
 
@@ -45,21 +45,6 @@ const Test = () => {
       const data = evt.target?.result as ArrayBuffer;
       JsZip.loadAsync(data).then((zip) => {
         zip.forEach((value: any, key: any) => {
-          if (value.startsWith('previews/')) {
-            key.async('base64').then((content: any) => {
-              const obj = {
-                src: `data:image/png;base64,${content}`,
-              };
-              const img1 = new Image();
-              img1.src = obj.src;
-              img1.onload = () => {
-                Object.assign(obj, {
-                  width: img1.width,
-                  height: img1.height,
-                });
-              };
-            });
-          }
           if (value.startsWith('meta')) {
             key.async('string').then((content: any) => {
               // console.log('---??meta', JSON.parse(content));
@@ -95,7 +80,12 @@ const Test = () => {
 
   const pages = pagesList.find((item) => item.do_objectID === currentId)?.layers || pagesList[0]?.layers || [];
 
-  const Layer1 = (layers: any[], wp: number, parentList: overrideListType[] = []) => layers.map((item: any) => {
+  const Layer1 = (
+    layers: any[], // 数据
+    wp: number, // 比例
+    parentList: overrideListType[] = [], // 父级传过来可覆盖的数据
+    parent: any = {}, // 父级数据
+  ) => layers.map((item: any, index) => {
     const {
       currentStyle,
       itemValueOverride,
@@ -112,7 +102,7 @@ const Test = () => {
       borderGradient,
       shapeStyle,
       overrideSymbolID,
-    } = getStyleChildrenInfo(item, documentSharedStyle, parentList, imgs, overId, wp);
+    } = getStyleChildrenInfo(item, documentSharedStyle, parentList, imgs, overId, wp, parent, index);
 
     const infoObj = JSON.parse(JSON.stringify(currentStyle));
     const temList = overrideList.length > 0 ? overrideList : parentList;
@@ -121,15 +111,20 @@ const Test = () => {
       return id === i.symbolID;
     })?.layers || [];
 
-    if (item.do_objectID === 'FCE9ED37-B213-4178-B1DB-0C863A34A48D') {
-      console.log('==item', item);
-    }
-    if (item.do_objectID === '9F6905D1-FDF5-41EB-8377-90D5E9F4090E') {
-      console.log('==parent', item);
-    }
-    if (item.do_objectID === '31EFFF86-3683-4FCC-8611-E9C15B31E3BB') {
-      console.log('==???another child', item);
-    }
+    /* 系统图标锁 */
+    // if (item.do_objectID === 'FCE9ED37-B213-4178-B1DB-0C863A34A48D') {
+    //   console.log('==item', item, index);
+    // }
+    // if (item.do_objectID === '9F6905D1-FDF5-41EB-8377-90D5E9F4090E') {
+    //   console.log('==parent', item);
+    // }
+    // if (item.do_objectID === '31EFFF86-3683-4FCC-8611-E9C15B31E3BB') {
+    //   console.log('==???another child', item, index);
+    // }
+
+    // if (item.do_objectID === 'C7BB678E-83E4-45C3-BB6B-8A1C87E1256F') {
+    //   console.log('==search', item);
+    // }
 
     return (
       <div
@@ -140,6 +135,7 @@ const Test = () => {
         onClick={(e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
           e.stopPropagation();
           setShow(true);
+          console.log('==tem', item);
           setInfo(Object.assign(infoObj, {
             top: undefined,
             left: undefined,
@@ -148,8 +144,8 @@ const Test = () => {
           setOverId(item.do_objectID);
         }}
       >
-        {(overrideSymbolID || item.symbolID) && Layer1(currentSymbolMaster, 1, temList)}
-        {Array.isArray(item?.layers) && Layer1(item?.layers, wp, temList)}
+        {(overrideSymbolID || item.symbolID) && Layer1(currentSymbolMaster, wp, temList, item)}
+        {Array.isArray(item?.layers) && Layer1(item?.layers, wp, temList, item)}
         {itemValueOverride || item.attributedString?.string || (item._class === 'text' && item.name)}
         {(item._class === 'shapePath' || dashPattern.length > 0)
           && (
@@ -201,7 +197,7 @@ const Test = () => {
                 let background;
                 const { backgroundColor: b, hasBackgroundColor, _class } = item || {};
                 if (hasBackgroundColor && _class === 'artboard') {
-                  background = `rgba(${b.red * 255}, ${b.green * 255}, ${b.blue * 255}, ${b.alpha})`;
+                  background = getColor(b);
                 }
                 return (
                   <div

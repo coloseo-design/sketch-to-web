@@ -31,11 +31,16 @@ const PointSvg = (props: any) => {
     <svg
       style={{
         position: 'absolute',
-        minHeight: 1500,
-        minWidth: 1500,
-        top: -item.frame.y,
-        left: -item.frame.x,
+        // minHeight: 1500,
+        // minWidth: 1500,
+        // top: -item.frame.y,
+        // left: -item.frame.x,
+        // top: -lineWidth / 2,
+        // left: -lineWidth / 2,
       }}
+      // width={item.frame.width}
+      // height={item.frame.height}
+      viewBox={`${item.frame.x - lineWidth / 2} ${item.frame.y - lineWidth / 2} ${item.frame.width + lineWidth} ${item.frame.height + lineWidth}`}
     >
       {fillType === 1 && gradient.gradientType === 0
         && (

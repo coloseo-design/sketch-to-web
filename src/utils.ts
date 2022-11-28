@@ -46,80 +46,6 @@ export const getGradient = (gradient: any) => { // 渐变
   return `${linear}(${color.slice(0, color.length - 1)})`;
 };
 
-export const getCanvasGradient = ( // canvas渐变
-  context: CanvasRenderingContext2D, gradient: any, width: number, height: number,
-) => {
-  const {
-    from, to, stops, gradientType,
-  } = gradient || {};
-  const fromAxios = from.slice(1, from.length - 1).split(',');
-  const toAxios = to.slice(1, to.length - 1).split(',');
-  const linerColor = gradientType === 1 ? context.createRadialGradient(Number(fromAxios[0]) * width, Number(fromAxios[1]) * height, width / 2, Number(toAxios[0]) * width, Number(toAxios[1]) * height, width / 2) : context.createLinearGradient(Number(fromAxios[0]) * width, Number(fromAxios[1]) * height, Number(toAxios[0]) * width, Number(toAxios[1] * height));
-  stops.forEach((item: any) => {
-    linerColor.addColorStop(item.position, `rgba(${item.color.red * 255}, ${item.color.green * 255}, ${item.color.blue * 255}, ${item.color.alpha})`);
-  });
-
-  return linerColor;
-};
-
-export const getCircle = ( // 画圆
-  context: CanvasRenderingContext2D,
-  item: any,
-  color: string | CanvasGradient | null,
-  dashPattern: number[],
-  lineWidth: number,
-  fillType: number,
-  linerColor: CanvasGradient | null,
-  fillStyle: string,
-) => {
-  context.beginPath();
-  context.arc(item.frame.width / 2, item.frame.width / 2, item.frame.width / 2, 0, 2 * Math.PI);
-  context.strokeStyle = color || 'transparent';
-  dashPattern.length > 0 && context.setLineDash(dashPattern);
-  context.lineWidth = lineWidth;
-  context.fillStyle = fillType === 1 && linerColor ? linerColor : fillStyle || 'transparent';
-  (fillStyle || linerColor) && context.fill();
-  context.stroke();
-  context.closePath();
-  return context;
-};
-
-export const getRectCircle = ( // 画虚线圆角矩形
-  context: CanvasRenderingContext2D,
-  item: any,
-  lineWidth: number,
-  color: string | CanvasGradient | null,
-  dashPattern: number[],
-  fillType: number,
-  linerColor: CanvasGradient | null,
-  fillStyle: string,
-) => {
-  const { width, height } = item.frame;
-  const x = 0;
-  const y = 0;
-  const radius = item.fixedRadius || 0;
-  context.beginPath(); // 开始绘制路径
-  context.lineWidth = lineWidth; // 边框大小
-  context.setLineDash(dashPattern);
-  // 起始点:moveTo(x,y) 二次贝塞尔曲线:quadraticCurveTo('控制点x','控制点y','结束点x','结束点y') 结束点:lineTo(x,y) ;
-  context.moveTo(x + radius, y);
-  context.lineTo(x + width - radius, y);
-  context.quadraticCurveTo(x + width, y, x + width, y + radius);
-  context.lineTo(x + width, y + height - radius);
-  context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-  context.lineTo(x + radius, y + height);
-  context.quadraticCurveTo(x, y + height, x, y + height - radius);
-  context.lineTo(x, y + radius);
-  context.quadraticCurveTo(x, y, x + radius, y);
-  context.fillStyle = fillType === 1 && linerColor ? linerColor : fillStyle || 'transparent'; // 为圆角矩形填充颜色
-  context.strokeStyle = color || 'transparent'; // 矩形边框颜色
-  context.closePath(); // 闭合绘制的路径
-  context.fill(); // 填充当前的路径,默认颜色是黑色
-  context.stroke(); // 绘制确切的路径
-
-  return context;
-};
-
 export const getColor = (color: any = {}) => `rgba(${(color.red * 255).toFixed(0)}, ${(color.green * 255).toFixed(0)}, ${(color.blue * 255).toFixed(0)}, ${color.alpha})`;
 
 export const getConvertedToNewRoundCorners = (points: any[] = []) => {
@@ -132,11 +58,13 @@ export const getConvertedToNewRoundCorners = (points: any[] = []) => {
 
 export const getStyleChildrenInfo = (
   item: any,
-  documentSharedStyle: any[],
-  parentList: overrideListType[],
-  imgs: any[],
+  documentSharedStyle: any[], // 全局样式
+  parentList: overrideListType[], // 父级传过来覆盖的样式文案
+  imgs: any[], // 图片
   overId: string,
-  wp: number,
+  wp: number, // 比例
+  parentInfo: any = {},
+  index: number,
 ) => {
   const {
     style = {}, image, isVisible,
@@ -145,9 +73,8 @@ export const getStyleChildrenInfo = (
     hasConvertedToNewRoundCorners, points,
     textBehaviour,
   } = item || {};
-  let parentStyle;
   const overrideList: overrideListType[] = [];
-  overrideValues.forEach((i: any) => {
+  overrideValues.forEach((i: any) => { // 覆盖的值
     const { value = '', overrideName = '' } = i || {};
     const keyIndex = overrideName.lastIndexOf('_');
     const overrideObjectID = overrideValues.length > 0 ? overrideName.slice(0, keyIndex) : '';
@@ -172,6 +99,11 @@ export const getStyleChildrenInfo = (
     }
   }); // 覆盖的值和style
 
+  let parentStyle;
+  if (parentInfo.windingRule === 0 && style?.windingRule === 1) {
+    parentStyle = parentInfo.style;
+  }
+
   const {
     textStyle = {},
     fills = [],
@@ -179,8 +111,7 @@ export const getStyleChildrenInfo = (
     shadows = [],
     contextSettings = {},
     borderOptions = {},
-    windingRule: styleRule,
-  } = itemStyle || style || {};
+  } = itemStyle || parentStyle || style || {};
   let color;
   let font;
   let family;
@@ -203,12 +134,12 @@ export const getStyleChildrenInfo = (
   // 背景色
   const {
     color: bgColor = {}, isEnabled: isFillendable = false, gradient = {}, fillType = 0,
-  } = fills.length > 0 ? fills[fills.length - 1] : {};
+  } = fills.length > 0 ? fills[parentStyle ? index : fills.length - 1] || {} : {};
 
   // border样式
   const {
     color: borderC = {}, thickness = 1, isEnabled = false, gradient: borderGradient = {}, fillType: borderFillType = 0,
-  } = borders.length > 0 ? borders[borders.length - 1] : {};
+  } = borders.length > 0 ? borders[parentStyle ? index : borders.length - 1] || {} : {};
   // border线段 type
   const { dashPattern = [], isEnabled: borderOpEnabled } = borderOptions;
 
@@ -233,7 +164,7 @@ export const getStyleChildrenInfo = (
     src = currentImg ? currentImg.src : undefined;
   }
 
-  const flip = isFlippedHorizontal || isFlippedVertical ? 180 : 0;
+  const flip = isFlippedHorizontal || isFlippedVertical ? 180 : 0; // 垂直水平旋转
 
   const rotate = item.rotation ? 360 - item.rotation + flip : 0;
 
@@ -253,7 +184,7 @@ export const getStyleChildrenInfo = (
     background: (windingRule !== 0 && className !== 'shapeGroup' && className !== 'text') ? (fillType === 1 ? `${linearGradient}` : background) : undefined,
     boxShadow,
     transform: rotate ? `rotate(${rotate}deg)` : isFlippedHorizontal ? 'rotateY(180deg)' : isFlippedVertical ? 'rotateX(180deg)' : undefined,
-    display: isVisible ? undefined : 'none',
+    display: isVisible ? 'block' : 'none',
     opacity: contextSettings.opacity === 1 ? undefined : contextSettings.opacity,
     lineHeight,
     borderRadius: radius,
@@ -293,7 +224,6 @@ export const getStyleChildrenInfo = (
     borderFillType,
     borderGradient,
     shapeStyle,
-    parentStyle,
     overrideSymbolID,
   };
 };
