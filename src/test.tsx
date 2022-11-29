@@ -12,7 +12,9 @@ import Portal from './portal';
 import Menu from './menu';
 import StyleComponent from './style';
 import PointSvg from './shape';
-import { overrideListType, getStyleChildrenInfo, getColor } from './utils';
+import {
+  overrideListType, getStyleChildrenInfo, getColor, getOverrideList,
+} from './utils';
 
 import './index.less';
 
@@ -82,7 +84,6 @@ const Test = () => {
 
   const Layer1 = (
     layers: any[], // 数据
-    wp: number, // 比例
     parentList: overrideListType[] = [], // 父级传过来可覆盖的数据
     parent: any = {}, // 父级数据
   ) => layers.map((item: any, index) => {
@@ -97,12 +98,13 @@ const Test = () => {
       dashPattern,
       gradient,
       fillType,
-      overrideList,
+      shapeStyle,
       borderFillType,
       borderGradient,
-      shapeStyle,
       overrideSymbolID,
-    } = getStyleChildrenInfo(item, documentSharedStyle, parentList, imgs, overId, wp, parent, index);
+      isGradient,
+    } = getStyleChildrenInfo(item, parentList, imgs, overId, parent, index);
+    const overrideList = getOverrideList(item, documentSharedStyle);
 
     const infoObj = JSON.parse(JSON.stringify(currentStyle));
     const temList = overrideList.length > 0 ? overrideList : parentList;
@@ -111,20 +113,9 @@ const Test = () => {
       return id === i.symbolID;
     })?.layers || [];
 
-    /* 系统图标锁 */
-    // if (item.do_objectID === 'FCE9ED37-B213-4178-B1DB-0C863A34A48D') {
-    //   console.log('==item', item, index);
-    // }
-    // if (item.do_objectID === '9F6905D1-FDF5-41EB-8377-90D5E9F4090E') {
-    //   console.log('==parent', item);
-    // }
-    // if (item.do_objectID === '31EFFF86-3683-4FCC-8611-E9C15B31E3BB') {
-    //   console.log('==???another child', item, index);
-    // }
-
-    // if (item.do_objectID === 'C7BB678E-83E4-45C3-BB6B-8A1C87E1256F') {
-    //   console.log('==search', item);
-    // }
+    if (item.do_objectID === '5ACD2A86-706E-4597-BA3A-303D4E3E2A81') {
+      console.log('==?', item, currentSymbolMaster);
+    }
 
     return (
       <div
@@ -144,10 +135,10 @@ const Test = () => {
           setOverId(item.do_objectID);
         }}
       >
-        {(overrideSymbolID || item.symbolID) && Layer1(currentSymbolMaster, wp, temList, item)}
-        {Array.isArray(item?.layers) && Layer1(item?.layers, wp, temList, item)}
+        {(overrideSymbolID || item.symbolID) && Layer1(currentSymbolMaster, temList, item)}
+        {Array.isArray(item?.layers) && Layer1(item?.layers, temList, item)}
         {itemValueOverride || item.attributedString?.string || (item._class === 'text' && item.name)}
-        {(item._class === 'shapePath' || dashPattern.length > 0)
+        {(item._class === 'shapePath' || dashPattern.length > 0 || isGradient)
           && (
             <PointSvg
               item={item}
@@ -213,7 +204,7 @@ const Test = () => {
                       background,
                     }}
                   >
-                    {Layer1(item.layers, 1)}
+                    {Layer1(item.layers)}
                   </div>
                 );
               })}
